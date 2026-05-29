@@ -324,11 +324,15 @@ export const linker = {
                 };
 
                 http().get('/resources-applications').done(function(apps){
+                    const nullAddressApps = _.filter(model.me.apps, function(app){ return !app.address; });
+                    if (nullAddressApps.length > 0) {
+                        console.warn('[linker] Apps with null/empty address:', _.map(nullAddressApps, function(a){ return { name: a.name, displayName: a.displayName, id: a.id }; }));
+                    }
                     scope.linker.apps = _.filter(model.me.apps, function(app){
                         return _.find(
                             apps,
                             function (match) {
-                                return app.address.indexOf(match) !== -1 && app.icon && app.address.indexOf('#') === -1
+                                return app.address && app.address.indexOf(match) !== -1 && app.icon && app.address.indexOf('#') === -1
                             }
                         );
                     });
@@ -338,7 +342,7 @@ export const linker = {
                         return app;
                     });
 
-                    scope.linker.search.application = _.find(scope.linker.apps, function(app){ return app.address.indexOf(appPrefix) !== -1 });
+                    scope.linker.search.application = _.find(scope.linker.apps, function(app){ return app.address && app.address.indexOf(appPrefix) !== -1 });
                     if(!scope.linker.search.application){
                         scope.linker.search.application = scope.linker.apps[0];
                         scope.linker.searchApplication(function(){
