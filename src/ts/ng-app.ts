@@ -1153,20 +1153,17 @@ module.directive("publicInfotip", [
   },
 ]);
 
+// Suivi de page : Matomo remplace Xiti. Le tracking est désormais assuré par le
+// Tracker Matomo (interception de window.entcore.template.open -> trackPageView,
+// plus haut dans ce fichier) et par trackingService (/analyticsConf). On garde la
+// directive <xiti> en NO-OP pour la compatibilité des templates qui l'utilisent,
+// sans charger l'ancien script /xiti/public/js/directive.js (qui renvoie 404).
 module.directive("xiti", function () {
   return {
     restrict: "E",
     compile: function (element, attributes) {
       return function (scope) {
-        jQuery.getScript("/xiti/public/js/directive.js", async function () {
-          element.on("run.script", async function (event, url) {
-            await window.xiti.run(url);
-          });
-          scope.$on("$destroy", function () {
-            element.off();
-          });
-          await window.xiti.run();
-        });
+        // no-op : plus de chargement Xiti, le tracking est fait par Matomo.
       };
     },
   };
