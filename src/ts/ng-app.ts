@@ -1922,7 +1922,9 @@ module.directive("filters", function () {
     template:
       '<div class="row line filters">' +
       '<div class="filters-icons">' +
-      "<ul ng-transclude>" +
+      // role=presentation : ce <ul> est un conteneur de mise en page (contenu transclus
+      // non-<li>) — retire la sémantique de liste cassée (RGAA/axe « list »).
+      '<ul ng-transclude role="presentation">' +
       "</ul></div>" +
       '</div><div class="row"></div> ',
     transclude: true,
