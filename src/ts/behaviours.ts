@@ -177,19 +177,28 @@ export var Behaviours = (function(){
 
             let callbacks = Behaviours.applicationsBehaviours[serviceName].callbacks;
             let errors = Behaviours.applicationsBehaviours[serviceName].errors;
-            http().get('/' + serviceName + '/public/js/behaviours.js').done((content) => {
+            // Injection d'une vraie balise <script> (pas un simple fetch AJAX) : le fichier doit
+            // s'EXÉCUTER pour que son Behaviours.register(serviceName, {...}) s'exécute et remplace
+            // le placeholder {callbacks, errors} ci-dessus par le vrai objet (rights, workflow...).
+            // Un http().get() qui ne fait que récupérer le texte du fichier ne déclenche jamais ce
+            // register() : applicationsBehaviours[serviceName] reste alors bloqué sur le placeholder
+            // pour toujours (myRights ne se remplit jamais, silencieusement).
+            let script = document.createElement('script');
+            script.src = '/' + serviceName + '/public/js/behaviours.js';
+            script.onload = () => {
                 callbacks.forEach((cb) => {
                     cb(Behaviours.applicationsBehaviours[serviceName]);
                 });
-            })
-            .error(() => {
+            };
+            script.onerror = () => {
                 errors.forEach((err) => {
                     if (typeof err.cb === 'function') {
                         err.cb();
                     }
                 });
 				Behaviours.applicationsBehaviours[serviceName] = {failed: true};
-            });
+            };
+            document.body.appendChild(script);
 
 			return actions;
 		},

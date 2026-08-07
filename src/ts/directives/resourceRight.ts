@@ -57,7 +57,12 @@ export let resourceRight = ng.directive('resourceRight', ['$parse', ($parse) => 
 
                 attributes.$observe('name', () => switchHide());
                 scope.$watch(() => resource(scope), () => switchHide());
-                scope.$watch(() => resource(scope) && resource(scope).myRights, () => switchHide());
+                // Watch profond (3e argument) : Behaviours.findRights résout de façon asynchrone
+                // et mute myRights EN PLACE (element.myRights[behaviour] = ...) sans jamais
+                // réassigner la référence. Un $watch par référence (défaut) ne détecte donc jamais
+                // cette mutation, et le bouton reste caché même une fois les droits correctement
+                // calculés en arrière-plan.
+                scope.$watch(() => resource(scope) && resource(scope).myRights, () => switchHide(), true);
             }
         }
     }
