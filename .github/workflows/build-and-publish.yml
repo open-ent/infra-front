@@ -22,17 +22,24 @@ jobs:
         with:
           version: 10
 
+      # package.json n'est jamais commité (gitignoré) : il est généré depuis
+      # package.json.template par build.sh:init() en dev (placeholders %branch%/
+      # %generateVersion%). Pour un tag -patched, on fixe la version directement
+      # sur le nom du tag (release immuable), pas de suffixe timestamp de dev.
+      - name: Générer package.json depuis le template
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          cp package.json.template package.json
+          sed -i "s/%generateVersion%//" package.json
+          sed -i "s/%branch%\.//" package.json
+          npm pkg set version="${TAG}"
+          echo "Version publiée : ${TAG}"
+
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
       - name: Build (gulp release:build)
         run: pnpm run release:build
-
-      - name: Set package version from git tag
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          npm pkg set version="${TAG}"
-          echo "Version publiée : ${TAG}"
 
       - name: Configure npm pour Nexus (npm-passtech)
         env:
