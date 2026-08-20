@@ -1,0 +1,50 @@
+name: Build & Publish npm package
+
+on:
+  push:
+    tags: ['*-patched']
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish:
+    name: Build & Publish (Nexus npm-passtech)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build (gulp release:build)
+        run: pnpm run release:build
+
+      - name: Set package version from git tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          npm pkg set version="${TAG}"
+          echo "Version publiée : ${TAG}"
+
+      - name: Configure npm pour Nexus (npm-passtech)
+        env:
+          NEXUS_USER: ${{ secrets.NEXUS_USER }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          AUTH=$(printf '%s:%s' "$NEXUS_USER" "$NEXUS_PASSWORD" | base64 -w0)
+          cat > ~/.npmrc << EOF
+          registry=https://rct-nexus.tech.fr/repository/npm-passtech/
+          //rct-nexus.tech.fr/repository/npm-passtech/:_auth=${AUTH}
+          //rct-nexus.tech.fr/repository/npm-passtech/:always-auth=true
+          EOF
+
+      - name: Publish to Nexus npm-passtech
+        run: npm publish --registry=https://rct-nexus.tech.fr/repository/npm-passtech/
