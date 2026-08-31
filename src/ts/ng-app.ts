@@ -1858,7 +1858,19 @@ module.directive("datePicker", [
         });
 
         element.on("$destroy", function () {
-          controller.hide();
+          // Remove the body/lightbox-level listeners bound above: without this,
+          // every open/close cycle of a form containing a <date-picker> (e.g.
+          // EDT "Modifier un cours") piles up new click/focusin handlers on
+          // body that are never released.
+          $("body, lightbox").off("click", hideFunction);
+          $("body, lightbox").off("focusin", hideFunction);
+          // NOTE: calling controller.destroy() here (to also tear down the
+          // bootstrap-datepicker widget's own DOM/listeners) was tried and
+          // reverted: this third-party plugin's destroy() had never been
+          // exercised anywhere in the app and broke in-app back navigation.
+          // The "datepicker dropdown-menu" DOM leak this would have fixed is
+          // a smaller issue than that regression — left as a known residual
+          // leak rather than risk it again without deeper plugin-side testing.
         });
       },
     };

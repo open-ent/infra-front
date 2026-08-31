@@ -950,7 +950,7 @@ export let RTE = {
                         element.find('button.editor-edit-action').css({ display: 'none' });
                     }
 
-                    $('body').on('mousedown', function(e, props: any){
+                    const onBodyMouseDown = function(e, props: any){
                         let restrict: string = props && props.restrict;
                         if($(e.target).parents('[ignore-editor-mousedown]').length > 0 || (restrict != undefined && !$(element).is(`#${restrict}`))) {
                             return true;
@@ -985,7 +985,8 @@ export let RTE = {
                                 element.children('editor-toolbar').attr('style', '');
                             }
                         }
-                    });
+                    };
+                    $('body').on('mousedown', onBodyMouseDown);
 
                     $('editor-toolbar').on('mousedown', function(e){
                         e.preventDefault();
@@ -1206,6 +1207,7 @@ export let RTE = {
                     scope.$on('$destroy', function () {
                         cancelAttributesClean();
                         cancelAnimationFrame(placeEditorToolbar);
+                        $('body').off('mousedown', onBodyMouseDown);
                     });
                 }
             };

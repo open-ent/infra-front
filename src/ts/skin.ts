@@ -208,7 +208,7 @@ export var skin = {
     },
 	setIs1D() {
 		Promise.resolve(ui.getCurrentThemePreference()).then((conf) => {
-			skin.is1D = (conf.parent === 'panda'); 
+			skin.is1D = !!conf && (conf.parent === 'panda');
 		});
 
 	}
