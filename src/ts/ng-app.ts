@@ -1680,8 +1680,23 @@ class DatepickerController {
     if (this._started) this.element.datepicker("setValue", formatted);
   }
   destroy() {
-    if (this._started) this.element.datepicker("destroy");
+    if (!this._started) return;
     this._started = false;
+    // Le plugin vendored (bootstrap-datepicker.js, 2012) n'a PAS de méthode "destroy" —
+    // appeler .datepicker("destroy") lève un TypeError synchrone (data.destroy is not a
+    // function) qui remonte hors de jqLite.cleanData et interrompt en plein milieu le
+    // démontage de vue du routeur (bouton "Retour" mort, sans erreur console). Nettoyage
+    // manuel ciblé à la place : retire juste le dropdown flottant que le plugin ajoute à
+    // <body> (this.picker, cf. constructeur du plugin), sans invoquer de méthode inexistante.
+    try {
+      const data = this.element.data("datepicker");
+      if (data && data.picker) {
+        data.picker.remove();
+      }
+      this.element.removeData("datepicker");
+    } catch (e) {
+      // best-effort : ce nettoyage ne doit jamais interrompre le $destroy en cours.
+    }
   }
 }
 module.directive("datePicker", [
@@ -1864,13 +1879,13 @@ module.directive("datePicker", [
           // body that are never released.
           $("body, lightbox").off("click", hideFunction);
           $("body, lightbox").off("focusin", hideFunction);
-          // NOTE: calling controller.destroy() here (to also tear down the
-          // bootstrap-datepicker widget's own DOM/listeners) was tried and
-          // reverted: this third-party plugin's destroy() had never been
-          // exercised anywhere in the app and broke in-app back navigation.
-          // The "datepicker dropdown-menu" DOM leak this would have fixed is
-          // a smaller issue than that regression — left as a known residual
-          // leak rather than risk it again without deeper plugin-side testing.
+          // Root cause of the earlier regression (navigation "Retour" dead after enabling
+          // this): DatepickerController.destroy() used to call the plugin's own
+          // .datepicker("destroy"), a method the vendored plugin doesn't implement — the
+          // resulting TypeError propagated out of jqLite.cleanData mid-view-teardown and
+          // aborted the router's view swap. destroy() now does a manual, guarded cleanup
+          // instead (removes the floating .picker only), so it's safe to call here.
+          controller.destroy();
         });
       },
     };
