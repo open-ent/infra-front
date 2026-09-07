@@ -36,7 +36,7 @@
 		<i18n>calendar.mode.fortnight</i18n> <span class="zero-mobile">- [[calendar.firstDay.format('DD/MM/YYYY')]] <i18n>calendar.weekto</i18n> [[moment(calendar.firstDay).add(13, 'days').format('DD/MM/YYYY')]]</span>
 	</span>
 </div>
-<div class="week-switcher" ng-if="display.mode !== 'month'">
+<div class="week-switcher" ng-if="display.mode !== 'month' && display.mode !== 'fortnight'">
     <date-picker-icon ng-model="calendar.firstDay" ng-change="updateCalendarDate()" class="cell"></date-picker-icon>
 </div>
 <div class="schedule" drawing-zone ng-if="display.mode !== 'month' && display.mode !== 'fortnight'">
