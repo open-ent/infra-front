@@ -94,20 +94,35 @@ export var calendar = {
 
                 var cur = moment(fd).lang('en');
 
-                while (
-                    cur.isSame(fd.clone().startOf('day'), 'day') ||
-                    (
-                        cur.isAfter(fd.clone().startOf(that.increment)) &&
-                        cur.isBefore(fd.clone().endOf(that.increment))
-                    )
-                    ) {
-                    days.push({
-                        name: cur.format('dddd').toLowerCase(),
-                        date: cur.clone(),
-                        index: cur.dayOfYear(),
-                    });
-                    cur.add(1, 'day');
-			}
+                // 'fortnight' (quinzaine) n'a pas d'équivalent d'unité MomentJS pour
+                // startOf/endOf : les 14 jours sont bornés manuellement depuis firstDay
+                // (déjà cadré sur le lundi de la semaine courante par setDate/getIsoIncrement).
+                if (that.increment === 'fortnight') {
+                    var fortnightEnd = moment(fd).add(14, 'days');
+                    while (cur.isBefore(fortnightEnd)) {
+                        days.push({
+                            name: cur.format('dddd').toLowerCase(),
+                            date: cur.clone(),
+                            index: cur.dayOfYear(),
+                        });
+                        cur.add(1, 'day');
+                    }
+                } else {
+                    while (
+                        cur.isSame(fd.clone().startOf('day'), 'day') ||
+                        (
+                            cur.isAfter(fd.clone().startOf(that.increment)) &&
+                            cur.isBefore(fd.clone().endOf(that.increment))
+                        )
+                        ) {
+                        days.push({
+                            name: cur.format('dddd').toLowerCase(),
+                            date: cur.clone(),
+                            index: cur.dayOfYear(),
+                        });
+                        cur.add(1, 'day');
+                    }
+                }
                 that.days.load(days);
             },
 		});
@@ -196,6 +211,10 @@ calendar.Calendar.prototype.addScheduleItems = function(items){
     var schedule = this;
     items
         .filter(function(item) {
+            if (schedule.increment === 'fortnight') {
+                var fortnightEnd = moment(schedule.firstDay).add(14, 'days');
+                return moment(item.end).isSameOrAfter(schedule.firstDay) && moment(item.end).isBefore(fortnightEnd);
+            }
             return moment(item.end).isSame(schedule.firstDay, schedule.getIsoIncrement(schedule.increment));
         })
         .forEach(function(item) {
@@ -212,9 +231,9 @@ calendar.Calendar.prototype.addScheduleItems = function(items){
 };
 
 calendar.Calendar.prototype.setIncrement = function(incr) {
-    if (['day', 'week', 'month'].indexOf(incr) === -1) {
+    if (['day', 'week', 'fortnight', 'month'].indexOf(incr) === -1) {
         throw new Error(
-            "Invalid argument: increment must be 'day', 'week' or 'month'"
+            "Invalid argument: increment must be 'day', 'week', 'fortnight' or 'month'"
         );
     }
 
@@ -288,24 +307,38 @@ calendar.Calendar.prototype.setStartAndEndOfDay = function (slots) {
 };
 
 calendar.Calendar.prototype.setDate = function(momentDate){
-    this.firstDay = moment(momentDate).startOf(this.getIsoIncrement(this.increment));
+    // 'fortnight' se cadre sur le lundi de la semaine de la date donnée (comme 'week'),
+    // moment n'ayant pas d'unité 'fortnight' pour startOf.
+    if (this.increment === 'fortnight') {
+        this.firstDay = moment(momentDate).startOf('isoWeek');
+    } else {
+        this.firstDay = moment(momentDate).startOf(this.getIsoIncrement(this.increment));
+    }
 	this.days.sync();
 	this.trigger('date-change');
 };
 calendar.Calendar.prototype.next = function() {
-    // pluralize to match MomentJS API
-    var incr = this.increment + 's';
-
-    var newDate = moment(this.firstDay).add(1,   incr);
+    var newDate;
+    if (this.increment === 'fortnight') {
+        newDate = moment(this.firstDay).add(14, 'days');
+    } else {
+        // pluralize to match MomentJS API
+        var incr = this.increment + 's';
+        newDate = moment(this.firstDay).add(1, incr);
+    }
     this.setDate(newDate);
     return newDate;
 };
 
 calendar.Calendar.prototype.previous = function() {
-    // pluralize to match MomentJS API
-    var incr = this.increment + 's';
-
-    var newDate = moment(this.firstDay).subtract(1, incr);
+    var newDate;
+    if (this.increment === 'fortnight') {
+        newDate = moment(this.firstDay).subtract(14, 'days');
+    } else {
+        // pluralize to match MomentJS API
+        var incr = this.increment + 's';
+        newDate = moment(this.firstDay).subtract(1, incr);
+    }
     this.setDate(newDate);
     return newDate;
 };

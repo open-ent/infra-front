@@ -13,18 +13,8 @@
             <button ng-click="display.mode = 'month'" ng-class="{cyan: display.mode === 'month'}">
                 <i18n>calendar.mode.month</i18n>
             </button>
-            <!--
-                Vue "quinzaine" (2 semaines) demandée mais pas encore implémentée :
-                le calcul de bornes (Calendar.setIncrement/sync, cf. calendar.ts) ne connaît que
-                'day' | 'week' | 'month' et le template ne câble que ces 3 vues (voir cadrage
-                mémoire "edt-vue-quinzaine-manquante"). Bouton affiché mais désactivé en attendant
-                l'implémentation complète (calcul de bornes 14 jours + template dédié + CSS).
-            -->
-            <button disabled="disabled"
-                    class="fortnight-mode-placeholder"
-                    tooltip="Quinzaine — bientôt disponible"
-                    aria-label="Quinzaine (bientôt disponible)">
-                Quinzaine
+            <button ng-click="display.mode = 'fortnight'" ng-class="{cyan: display.mode === 'fortnight'}">
+                <i18n>calendar.mode.fortnight</i18n>
             </button>
         </div>
         <div class="calendarOptionButtonGroup nextPrevious" ng-if="display.showNextPreviousButton">
@@ -42,11 +32,14 @@
     <span ng-if="display.mode === 'month'">
 		[[moment(calendar.firstDay).format('MMMM YYYY')]]
 	</span>
+    <span ng-if="display.mode === 'fortnight'">
+		<i18n>calendar.mode.fortnight</i18n> <span class="zero-mobile">- [[calendar.firstDay.format('DD/MM/YYYY')]] <i18n>calendar.weekto</i18n> [[moment(calendar.firstDay).add(13, 'days').format('DD/MM/YYYY')]]</span>
+	</span>
 </div>
 <div class="week-switcher" ng-if="display.mode !== 'month'">
     <date-picker-icon ng-model="calendar.firstDay" ng-change="updateCalendarDate()" class="cell"></date-picker-icon>
 </div>
-<div class="schedule" drawing-zone ng-if="display.mode !== 'month'">
+<div class="schedule" drawing-zone ng-if="display.mode !== 'month' && display.mode !== 'fortnight'">
     <legend class="timeslots">
         <div ng-repeat="timeslot in calendar.timeSlots.all" class="timeslot"
              tooltip="[[timeslot.displayTime]]">
@@ -132,6 +125,48 @@
                      tooltip
                      tooltip-template="{{ itemTooltipTemplate }}"
                      tooltip-restrict-selector=".schedule-month">
+                    <container template="schedule-display-month-template"></container>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--
+    Vue "quinzaine" : réutilise intégralement le rendu/CSS de la vue mois (classe
+    "schedule-month" partagée, cf. libs/theme-open-ent/scss/modules/_schedule.scss) — seule la
+    fenêtre de jours chargés diffère (14 jours cadrés sur un lundi via calendar.ts au lieu du
+    mois calendaire). Comme la fenêtre commence toujours un lundi, aucun décalage (offset) initial
+    n'est nécessaire : les 14 jours se répartissent naturellement sur 2 lignes de 7 colonnes.
+-->
+<div class="schedule schedule-month schedule-fortnight"
+     ng-if="display.mode === 'fortnight'"
+     ng-class="{
+                sixDays: ( (display.saturday && !display.sunday) || (!display.saturday && display.sunday) ),
+                fiveDays: (!display.saturday && !display.sunday),
+             }"
+>
+    <div class="legend">
+        <div class="month-day offset-0">[[ moment().day(1).format('dddd') ]]</div>
+        <div class="month-day">[[ moment().day(2).format('dddd') ]]</div>
+        <div class="month-day">[[ moment().day(3).format('dddd') ]]</div>
+        <div class="month-day">[[ moment().day(4).format('dddd') ]]</div>
+        <div class="month-day">[[ moment().day(5).format('dddd') ]]</div>
+        <div ng-if="display.saturday" class="month-day">[[ moment().day(6).format('dddd') ]]</div>
+        <div ng-if="display.sunday" class="month-day">[[ moment().day(7).format('dddd') ]]</div>
+    </div>
+    <div class="grid">
+        <div ng-repeat="day in calendar.days.all"
+             class="month-day offset-{{ getMonthDayOffset(day) }}"
+             ng-if="optionalDisplay(day)"
+        >
+            <span class="day-number" ng-click="createItem(day)">[[ day.date.format('DD/MM') ]]</span>
+            <div class="schedule-items">
+                <div ng-repeat="item in day.scheduleItems.all"
+                     class="item"
+                     tooltip
+                     tooltip-template="{{ itemTooltipTemplate }}"
+                     tooltip-restrict-selector=".schedule-fortnight">
                     <container template="schedule-display-month-template"></container>
                 </div>
             </div>
