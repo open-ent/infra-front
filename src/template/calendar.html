@@ -13,6 +13,19 @@
             <button ng-click="display.mode = 'month'" ng-class="{cyan: display.mode === 'month'}">
                 <i18n>calendar.mode.month</i18n>
             </button>
+            <!--
+                Vue "quinzaine" (2 semaines) demandée mais pas encore implémentée :
+                le calcul de bornes (Calendar.setIncrement/sync, cf. calendar.ts) ne connaît que
+                'day' | 'week' | 'month' et le template ne câble que ces 3 vues (voir cadrage
+                mémoire "edt-vue-quinzaine-manquante"). Bouton affiché mais désactivé en attendant
+                l'implémentation complète (calcul de bornes 14 jours + template dédié + CSS).
+            -->
+            <button disabled="disabled"
+                    class="fortnight-mode-placeholder"
+                    tooltip="Quinzaine — bientôt disponible"
+                    aria-label="Quinzaine (bientôt disponible)">
+                Quinzaine
+            </button>
         </div>
         <div class="calendarOptionButtonGroup nextPrevious" ng-if="display.showNextPreviousButton">
             <button ng-click="calendar.previous();">&#8592;</button>
