@@ -17,7 +17,10 @@ export let sniplets = {
                 if (model.me) {
                     apps = model.me.apps.filter(function (app) {
                         return _.find(apps, function (match) {
-                            return app.address.indexOf(match) !== -1 && app.icon.indexOf('/') === -1
+                            // Applications sans adresse ou sans icône (ex. Communication, Directory) :
+                            // ignorées, sinon indexOf sur null fait planter l'appli hôte (Pages).
+                            return !!app.address && app.address.indexOf(match) !== -1
+                                && !!app.icon && app.icon.indexOf('/') === -1
                         });
                     });
                     apps.push({

@@ -2313,10 +2313,10 @@ module.directive("attachments", [
             scope.attachments.apps = _.filter(model.me.apps, function (app) {
               return (
                 _.find(apps, function (match) {
-                  return app.address.indexOf(match) !== -1 && app.icon;
+                  return !!app.address && app.address.indexOf(match) !== -1 && app.icon;
                 }) &&
                 _.find(scope.apps, function (match) {
-                  return app.address.indexOf(match) !== -1;
+                  return !!app.address && app.address.indexOf(match) !== -1;
                 })
               );
             });
